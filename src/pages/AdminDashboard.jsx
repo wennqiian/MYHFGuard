@@ -17,6 +17,7 @@ import {
   Waves,
   Footprints,
   Mail,
+  CheckCircle2,
   Bell,
 } from "lucide-react"
 import { serverUrl } from "@/lib/api"

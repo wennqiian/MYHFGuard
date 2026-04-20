@@ -286,7 +286,7 @@ export async function processWeightImage(file: File, patientId: string) {
   formData.append("image", file)
   formData.append("patientId", patientId)
 
-  const response = await fetch("http://localhost:3001/api/ocr/weight", {
+  const response = await fetch(`${serverUrl()}/api/ocr/weight`, {
     method: "POST",
     body: formData,
   })

@@ -34,7 +34,7 @@ type PatientSummary = {
 }
 
 export default function SymptomChecker() {
-  const { t, language } = useLanguage()
+  const { t } = useLanguage()
 
   const getText = (key: string, fallback: string) =>
     t(key) !== key ? t(key) : fallback
@@ -68,7 +68,10 @@ export default function SymptomChecker() {
         {
           id: "1",
           role: "assistant",
-          content: t("myChatWelcome"),
+          content: getText(
+            "myChatWelcome",
+            "Hello! I'm your MyHFGuard AI Chat Assistant. I can help answer questions based on your symptoms, reminders, medication and health data.\n\n**Important:** I am not a doctor and cannot diagnose conditions. If you have chest pain, severe breathing difficulty, or stroke symptoms, please seek emergency help immediately.\n\nHow can I help you today?"
+          ),
           timestamp: new Date().toISOString(),
         },
       ])
@@ -79,24 +82,12 @@ export default function SymptomChecker() {
         console.log("[My Chat] backend health ok")
       } catch (e) {
         console.error("[My Chat] backend health failed", e)
-        toast.error(getText("serverConnectivityIssue", "Server connectivity issue"))
+        toast.error("Server connectivity issue")
       }
     }
 
     init()
   }, [])
-
-  useEffect(() => {
-    setMessages((prev) => {
-      if (prev.length === 0) return prev
-
-      return prev.map((msg, index) =>
-        index === 0 && msg.role === "assistant"
-          ? { ...msg, content: t("myChatWelcome") }
-          : msg
-      )
-    })
-  }, [language, t])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -135,34 +126,33 @@ export default function SymptomChecker() {
         }),
       })
 
-      if (!res.ok) {
-        let errMsg = `AI request failed: ${res.status}`
+      let data: any = null
 
-        try {
-          const errJson = await res.json()
-          errMsg =
-            errJson.details ||
-            errJson.error ||
-            JSON.stringify(errJson)
-        } catch {
-          errMsg = await res.text()
-        }
+      try {
+        data = await res.json()
+      } catch {
+        data = null
+      }
+
+      if (!res.ok) {
+        const errMsg =
+          data?.details ||
+          data?.error ||
+          `AI request failed: ${res.status}`
 
         throw new Error(errMsg)
       }
-
-      const data = await res.json()
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
         content:
-          data.response ||
+          data?.reply ||
           getText(
             "aiFallbackError",
             "I'm sorry, I encountered an error processing your request. Please try again."
           ),
-        timestamp: data.timestamp || new Date().toISOString(),
+        timestamp: data?.timestamp || new Date().toISOString(),
       }
 
       setMessages((prev) => [...prev, assistantMessage])

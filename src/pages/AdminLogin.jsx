@@ -17,7 +17,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -26,11 +25,11 @@ const AdminLogin = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
@@ -49,6 +48,13 @@ const AdminLogin = () => {
     const { data } = await supabase.auth.getSession();
     const role = data?.session?.user?.app_metadata?.role;
 
+    if (role !== "admin") {
+      setError("You are not authorized to access the admin dashboard.");
+      await supabase.auth.signOut();
+      setIsSubmitting(false);
+      return;
+    }
+
     setIsSubmitting(false);
     navigate("/admin/dashboard");
   };
@@ -56,7 +62,6 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-blue-100 dark:from-slate-950 dark:via-blue-950 dark:to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 overflow-hidden rounded-[32px] border border-slate-200 dark:border-white/10 shadow-[0_20px_80px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.45)] bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl">
-        {/* Left panel */}
         <div className="hidden lg:flex flex-col justify-between p-10 bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-700 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,white,transparent_40%)]" />
 
@@ -91,7 +96,6 @@ const AdminLogin = () => {
           </div>
         </div>
 
-        {/* Right panel */}
         <div className="flex items-center justify-center p-6 md:p-10 bg-white/70 dark:bg-slate-950/50">
           <Card className="w-full max-w-md border border-slate-200 dark:border-white/10 bg-white/80 dark:bg-white/5 shadow-none rounded-[28px] backdrop-blur-md">
             <CardHeader className="space-y-4 pt-8">

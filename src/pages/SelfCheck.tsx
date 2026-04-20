@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Weight,
@@ -129,19 +128,19 @@ const SelfCheck = () => {
   const [showInstructions, setShowInstructions] = useState(false)
   const [pendingAction, setPendingAction] = useState<"camera" | "upload" | null>(null)
 
-  // NEW: weight scanner states
   const [selectedWeightImage, setSelectedWeightImage] = useState<File | null>(null)
   const [weightPreviewUrl, setWeightPreviewUrl] = useState<string | null>(null)
   const [weightCameraMode, setWeightCameraMode] = useState(false)
   const [loadingWeightScan, setLoadingWeightScan] = useState(false)
   const [weightScanResult, setWeightScanResult] = useState<any>(null)
+  const [showWeightInstructions, setShowWeightInstructions] = useState(false)
+  const [pendingWeightAction, setPendingWeightAction] = useState<"camera" | "upload" | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
 
-  // NEW: weight scanner refs
   const weightVideoRef = useRef<HTMLVideoElement>(null)
   const weightStreamRef = useRef<MediaStream | null>(null)
   const weightFileInputRef = useRef<HTMLInputElement>(null)
@@ -190,6 +189,32 @@ const SelfCheck = () => {
     fetchEvents()
   }, [patientId])
 
+  useEffect(() => {
+    if (cameraMode && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+    }
+  }, [cameraMode])
+
+  useEffect(() => {
+    if (weightCameraMode && weightVideoRef.current && weightStreamRef.current) {
+      weightVideoRef.current.srcObject = weightStreamRef.current
+    }
+  }, [weightCameraMode])
+
+  useEffect(() => {
+    return () => {
+      stopCamera()
+      stopWeightCamera()
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+      if (weightPreviewUrl) URL.revokeObjectURL(weightPreviewUrl)
+    }
+  }, [previewUrl, weightPreviewUrl])
+
   async function fetchEvents() {
     try {
       if (!patientId) return
@@ -198,6 +223,21 @@ const SelfCheck = () => {
     } catch (err) {
       console.error(err)
     }
+  }
+
+  const getSymptomColor = (value: number) => {
+    if (value <= 0) return "#22c55e"
+    if (value === 1) return "#84cc16"
+    if (value === 2) return "#eab308"
+    if (value === 3) return "#f59e0b"
+    if (value === 4) return "#f97316"
+    return "#ef4444"
+  }
+
+  const getSymptomLabel = (value: number) => {
+    if (value === 0) return t("selfCheck.noSymptom")
+    if (value <= 2) return t("selfCheck.mild")
+    return t("selfCheck.severe")
   }
 
   async function submitWeightLog() {
@@ -215,7 +255,6 @@ const SelfCheck = () => {
 
       toast.success(t("selfCheck.toast.weightSaved"))
       setWeightKg("")
-
       setSelectedWeightImage(null)
       setWeightPreviewUrl(null)
       setWeightScanResult(null)
@@ -234,7 +273,7 @@ const SelfCheck = () => {
     if (!patientId || !weightKg) return
 
     const kg = parseFloat(weightKg)
-    if (isNaN(kg) || kg < 20) {
+    if (isNaN(kg) || kg < 20 || kg > 300) {
       setConfirmDialog({
         open: true,
         title: t("selfCheck.invalidWeightTitle"),
@@ -259,7 +298,7 @@ const SelfCheck = () => {
   const adjustWeight = (delta: number) => {
     const current = parseFloat(weightKg) || 60
     const next = Math.round((current + delta) * 10) / 10
-    if (next > 0) setWeightKg(next.toFixed(1))
+    if (next > 0 && next <= 300) setWeightKg(next.toFixed(1))
   }
 
   async function submitSymptomLog() {
@@ -314,6 +353,7 @@ const SelfCheck = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
       setSelectedImage(file)
       setPreviewUrl(URL.createObjectURL(file))
       setOcrResult(null)
@@ -329,7 +369,7 @@ const SelfCheck = () => {
     setLoadingVitals(true)
 
     try {
-      const result = await processWeightImage(selectedWeightImage, patientId)
+      const result = await processImage(selectedImage, patientId)
       setOcrResult(result)
       toast.success(t("selfCheck.toast.scanComplete"))
       setManualForm({
@@ -408,12 +448,6 @@ const SelfCheck = () => {
     setPendingAction(null)
   }
 
-  useEffect(() => {
-    if (cameraMode && videoRef.current && streamRef.current) {
-      videoRef.current.srcObject = streamRef.current
-    }
-  }, [cameraMode])
-
   const startCameraDirectly = async () => {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -422,7 +456,11 @@ const SelfCheck = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       })
 
       streamRef.current = stream
@@ -461,6 +499,7 @@ const SelfCheck = () => {
           (blob) => {
             if (blob) {
               const file = new File([blob], "camera-capture.jpg", { type: "image/jpeg" })
+              if (previewUrl) URL.revokeObjectURL(previewUrl)
               setSelectedImage(file)
               setPreviewUrl(URL.createObjectURL(file))
               stopCamera()
@@ -473,35 +512,42 @@ const SelfCheck = () => {
     }
   }
 
-  // =========================
-  // NEW: weight scanner logic
-  // =========================
-
   const extractWeightFromOCR = (result: any): string => {
     if (!result) return ""
 
-    const possibleValues = [
+    const preferredFields = [
       result.kg,
       result.weight,
       result.weightKg,
+      result.detectedWeight,
+      result.reading,
       result.value,
       result.value1,
-      result.reading,
-      result.text,
-      result.rawText,
-      result.ocrText,
-      result.detectedText,
     ]
 
-    for (const item of possibleValues) {
-      if (item === null || item === undefined) continue
-      const str = String(item)
-      const match = str.match(/(\d{2,3}(?:\.\d)?)/)
-      if (match) {
-        const num = parseFloat(match[1])
-        if (!isNaN(num) && num >= 20 && num <= 300) {
-          return num.toFixed(1)
-        }
+    for (const item of preferredFields) {
+      if (item === null || item === undefined || item === "") continue
+      const num = parseFloat(String(item).replace(/[^\d.]/g, ""))
+      if (!isNaN(num) && num >= 20 && num <= 300) {
+        return num.toFixed(1)
+      }
+    }
+
+    const textFields = [result.text, result.rawText, result.ocrText, result.detectedText]
+      .filter(Boolean)
+      .map((v: any) => String(v))
+
+    for (const text of textFields) {
+      const cleaned = text.replace(/[Oo]/g, "0").replace(/[Bb]/g, "8").replace(/[Ss]/g, "5")
+
+      const matches = cleaned.match(/\d{2,3}(?:\.\d{1,2})?/g) || []
+
+      const candidates = matches
+        .map((m) => parseFloat(m))
+        .filter((n) => !isNaN(n) && n >= 20 && n <= 300)
+
+      if (candidates.length > 0) {
+        return candidates[0].toFixed(1)
       }
     }
 
@@ -511,10 +557,28 @@ const SelfCheck = () => {
   const handleWeightImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
+      if (weightPreviewUrl) URL.revokeObjectURL(weightPreviewUrl)
       setSelectedWeightImage(file)
       setWeightPreviewUrl(URL.createObjectURL(file))
       setWeightScanResult(null)
     }
+  }
+
+  const handleWeightActionClick = (action: "camera" | "upload") => {
+    setPendingWeightAction(action)
+    setShowWeightInstructions(true)
+  }
+
+  const handleWeightContinue = () => {
+    setShowWeightInstructions(false)
+
+    if (pendingWeightAction === "camera") {
+      startWeightCamera()
+    } else if (pendingWeightAction === "upload") {
+      weightFileInputRef.current?.click()
+    }
+
+    setPendingWeightAction(null)
   }
 
   const startWeightCamera = async () => {
@@ -525,7 +589,11 @@ const SelfCheck = () => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       })
 
       weightStreamRef.current = stream
@@ -558,6 +626,7 @@ const SelfCheck = () => {
           (blob) => {
             if (blob) {
               const file = new File([blob], "weight-capture.jpg", { type: "image/jpeg" })
+              if (weightPreviewUrl) URL.revokeObjectURL(weightPreviewUrl)
               setSelectedWeightImage(file)
               setWeightPreviewUrl(URL.createObjectURL(file))
               stopWeightCamera()
@@ -582,37 +651,22 @@ const SelfCheck = () => {
       const result = await processWeightImage(selectedWeightImage, patientId)
       setWeightScanResult(result)
 
-      const detectedWeight = result.weight || ""
+      const detectedWeight = extractWeightFromOCR(result)
 
       if (detectedWeight) {
         setWeightKg(detectedWeight)
         toast.success(`Weight detected: ${detectedWeight} kg`)
       } else {
-        toast.error("Weight not detected clearly. Please retake the photo.")
+        toast.error("Weight not detected clearly. Please retake the photo in a bright place and keep the display straight.")
       }
     } catch (err: any) {
-      console.error(err)
+      console.error("Weight scan failed:", err)
       toast.error(err.message || "Failed to scan weight image.")
-      setSelectedWeightImage(null)
-      setWeightPreviewUrl(null)
       setWeightScanResult(null)
     } finally {
       setLoadingWeightScan(false)
     }
   }
-
-  useEffect(() => {
-    if (weightCameraMode && weightVideoRef.current && weightStreamRef.current) {
-      weightVideoRef.current.srcObject = weightStreamRef.current
-    }
-  }, [weightCameraMode])
-
-  useEffect(() => {
-    return () => {
-      stopCamera()
-      stopWeightCamera()
-    }
-  }, [])
 
   const symptomList = [
     { id: "cough", label: t("selfCheck.symptoms.cough") },
@@ -679,7 +733,7 @@ const SelfCheck = () => {
                       <CalendarIcon className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
+                  <PopoverContent className="w-auto p-2" align="end">
                     <Calendar
                       mode="single"
                       selected={selectedDate}
@@ -720,7 +774,6 @@ const SelfCheck = () => {
                   </CardHeader>
 
                   <CardContent className="space-y-6">
-                    {/* NEW: weight scanner */}
                     <div className="space-y-4 rounded-xl border p-4 bg-muted/20">
                       <div className="flex items-center gap-2">
                         <ScanLine className="w-5 h-5 text-primary" />
@@ -743,7 +796,7 @@ const SelfCheck = () => {
                             />
 
                             <div
-                              onClick={() => weightFileInputRef.current?.click()}
+                              onClick={() => handleWeightActionClick("upload")}
                               className="cursor-pointer flex flex-col items-center gap-2"
                             >
                               {weightPreviewUrl ? (
@@ -764,7 +817,7 @@ const SelfCheck = () => {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button onClick={startWeightCamera} variant="outline" className="flex-1">
+                            <Button onClick={() => handleWeightActionClick("camera")} variant="outline" className="flex-1">
                               <Camera className="w-4 h-4 mr-2" />
                               Use Camera
                             </Button>
@@ -819,9 +872,7 @@ const SelfCheck = () => {
                         <div className="rounded-lg bg-background border p-4 space-y-3">
                           <div className="text-sm">
                             <span className="font-medium">Detected weight:</span>{" "}
-                            <span className="text-primary font-bold">
-                              {weightKg ? `${weightKg} kg` : "Not detected"}
-                            </span>
+                            <span className="text-primary font-bold">{weightKg ? `${weightKg} kg` : "Not detected"}</span>
                           </div>
 
                           {weightScanResult.annotatedImage && (
@@ -839,7 +890,6 @@ const SelfCheck = () => {
                       )}
                     </div>
 
-                    {/* existing manual weight section */}
                     <div className="space-y-2">
                       <Label htmlFor="weight">{t("selfCheck.weightLabel")}</Label>
                       <div className="flex gap-3 items-center">
@@ -858,8 +908,21 @@ const SelfCheck = () => {
                           placeholder="68.5"
                           className="flex-1 text-center text-lg h-10"
                           step="0.1"
+                          min="20"
+                          max="300"
                           value={weightKg}
-                          onChange={(e) => setWeightKg(e.target.value)}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            if (value === "") {
+                              setWeightKg("")
+                              return
+                            }
+
+                            const num = parseFloat(value)
+                            if (!isNaN(num) && num >= 0 && num <= 300) {
+                              setWeightKg(value)
+                            }
+                          }}
                         />
 
                         <Button
@@ -917,32 +980,79 @@ const SelfCheck = () => {
                   </CardHeader>
 
                   <CardContent className="space-y-6">
-                    {symptomList.map((symptom) => (
-                      <div key={symptom.id} className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={symptom.id}>{symptom.label}</Label>
-                          <span className="text-sm font-semibold text-primary">{symptoms[symptom.id] ?? 0}</span>
-                        </div>
+                    {symptomList.map((symptom) => {
+                      const value = symptoms[symptom.id] ?? 0
+                      const leftPercent = (value / 5) * 100
+                      const color = getSymptomColor(value)
 
-                        <Slider
-                          id={symptom.id}
-                          value={[symptoms[symptom.id] ?? 0]}
-                          max={5}
-                          step={1}
-                          className="w-full"
-                          onValueChange={(v) => {
-                            const key = symptom.id
-                            setSymptoms((s) => ({ ...s, [key]: v[0] }))
-                          }}
-                        />
+                      return (
+                        <div key={symptom.id} className="space-y-3 rounded-xl border p-4 bg-muted/20">
+                          <div className="flex items-center justify-between gap-3">
+                            <Label htmlFor={symptom.id} className="text-sm font-medium leading-snug">
+                              {symptom.label}
+                            </Label>
 
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{t("selfCheck.noSymptom")}</span>
-                          <span>{t("selfCheck.mild")}</span>
-                          <span>{t("selfCheck.severe")}</span>
+                            <span
+                              className="min-w-[72px] rounded-full px-3 py-1 text-center text-sm font-bold text-white"
+                              style={{ backgroundColor: color }}
+                            >
+                              {value}
+                            </span>
+                          </div>
+
+                          <div className="relative pt-6 pb-2">
+                            <div
+                              className="absolute left-0 right-0 top-[30px] h-2 rounded-full"
+                              style={{
+                                background:
+                                  "linear-gradient(to right, #22c55e 0%, #84cc16 20%, #eab308 40%, #f59e0b 60%, #f97316 80%, #ef4444 100%)",
+                              }}
+                            />
+
+                            <div
+                              className="absolute top-[22px] h-6 w-6 -translate-x-1/2 rounded-full border-4 border-white shadow-md"
+                              style={{
+                                left: `${leftPercent}%`,
+                                backgroundColor: color,
+                              }}
+                            />
+
+                            <input
+                              id={symptom.id}
+                              type="range"
+                              min={0}
+                              max={5}
+                              step={1}
+                              value={value}
+                              onChange={(e) => {
+                                const newValue = Number(e.target.value)
+                                setSymptoms((s) => ({ ...s, [symptom.id]: newValue }))
+                              }}
+                              className="relative z-10 h-8 w-full cursor-pointer appearance-none bg-transparent [&::-webkit-slider-thumb]:h-6 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-transparent [&::-moz-range-thumb]:h-6 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:cursor-pointer [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-transparent"
+                            />
+                          </div>
+
+                          <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                            <span>0</span>
+                            <span>1</span>
+                            <span>2</span>
+                            <span>3</span>
+                            <span>4</span>
+                            <span>5</span>
+                          </div>
+
+                          <div className="flex justify-between text-xs">
+                            <span className="text-green-600 font-medium">{t("selfCheck.noSymptom")}</span>
+                            <span className="text-yellow-600 font-medium">{t("selfCheck.mild")}</span>
+                            <span className="text-red-600 font-medium">{t("selfCheck.severe")}</span>
+                          </div>
+
+                          <p className="text-xs font-medium" style={{ color }}>
+                            Current level: {getSymptomLabel(value)}
+                          </p>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
 
                     {dailyStatus.has_symptoms ? (
                       <div className="p-4 bg-green-50 text-green-700 rounded-lg flex items-center gap-2 text-sm font-medium">
@@ -1272,6 +1382,49 @@ const SelfCheck = () => {
 
             <Button onClick={handleContinue} className="w-full">
               {t("selfCheck.gotIt")}
+            </Button>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showWeightInstructions} onOpenChange={setShowWeightInstructions}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Weight Photo Guide</DialogTitle>
+              <DialogDescription>
+                Please keep the weighing scale display straight, clear, and bright before scanning.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-2 gap-6 my-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Correct</span>
+                </div>
+                <div className="border-2 border-green-500 dark:border-green-400 rounded-lg overflow-hidden">
+                  <img src={correctImage} alt="Correct example" className="w-full h-auto" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Keep the display flat, bright, and filling most of the frame.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-semibold">
+                  <XCircle className="w-5 h-5" />
+                  <span>Incorrect</span>
+                </div>
+                <div className="border-2 border-red-500 dark:border-red-400 rounded-lg overflow-hidden">
+                  <img src={slantedImage} alt="Incorrect example" className="w-full h-auto" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Avoid blur, slanted angle, shadow, and glare.
+                </p>
+              </div>
+            </div>
+
+            <Button onClick={handleWeightContinue} className="w-full">
+              Got it
             </Button>
           </DialogContent>
         </Dialog>
