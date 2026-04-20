@@ -21,12 +21,10 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          cache-dependency-path: vitalink/web/package-lock.json
+          cache-dependency-path: package-lock.json
       - name: Install deps
-        working-directory: vitalink/web
         run: npm ci
       - name: Build
-        working-directory: vitalink/web
         env:
           VITE_SERVER_URL: ${{ secrets.VITE_SERVER_URL }}
           PAGES_BASE: '/${{ github.event.repository.name }}/'
@@ -34,12 +32,11 @@ jobs:
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
       - name: Add SPA fallback
-        working-directory: vitalink/web
         run: cp dist/index.html dist/404.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: vitalink/web/dist
+          path: dist
 
   deploy:
     environment:
