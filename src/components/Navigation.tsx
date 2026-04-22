@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Stethoscope,
   Droplets,
-  Activity,
   BookOpen,
   LifeBuoy,
   User,
@@ -24,12 +23,12 @@ import logoImg from "@/assets/loginlogo.jpg"
 
 const navItems = [
   { to: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
+  { to: "/education", labelKey: "nav.education", icon: BookOpen },
   { to: "/self-check", labelKey: "nav.selfCheck", icon: Stethoscope },
   { to: "/water-salt", labelKey: "nav.waterDiet", icon: Droplets },
   { to: "/exercise", labelKey: "nav.exercise", icon: Dumbbell },
   { to: "/medication", labelKey: "nav.medication", icon: Pill },
   { to: "/ai-assistant", labelKey: "nav.aiAssistant", icon: Bot },
-  { to: "/education", labelKey: "nav.education", icon: BookOpen },
   { to: "/help-support", labelKey: "nav.helpSupport", icon: LifeBuoy },
 ]
 

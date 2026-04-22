@@ -5,19 +5,17 @@ const resources = {
   en: {
     translation: {
       nav: {
-        dashboard: "Dashboard",
-        selfCheck: "Self Check",
-        waterDiet: "Water & Diet",
-        exercise: "Exercise",
-        schedule: "Schedule",
-        medication: "Medication",
-        vitalsTracker: "Vitals Tracker",
-        aiAssistant: "AI Assistant",
-        education: "Education",
-        helpSupport: "Help & Support",
-        profile: "Profile",
         menu: "Menu",
         quickAccess: "Quick access",
+        dashboard: "Dashboard",
+        education: "My Learning",
+        selfCheck: "My Self-Check",
+        waterDiet: "My Water & Diet",
+        exercise: "My Exercise",
+        medication: "My Medication & Reminder",
+        aiAssistant: "My Chat",
+        helpSupport: "Help & Support",
+        profile: "Profile",
         logout: "Logout"
       },
 
@@ -417,22 +415,28 @@ const resources = {
 
       helpSupport: {
         title: "Help & Support",
-        subtitle: "Find assistance and support resources",
-        emergencyContact: "Emergency Contact",
-        faq: "Frequently Asked Questions",
-        contactUs: "Contact Us",
-        chatbot: "Chat Support",
-        hotline: "Hotline",
-        caregiverSupport: "Caregiver Support",
-        needHelp: "Need help? We are here to support you.",
+        subtitle: "Get support, emergency guidance and help for using MyHFGuard.",
+
         aboutTitle: "About MyHFGuard",
         aboutBody: "MyHFGuard helps heart failure patients monitor symptoms, manage reminders, record daily health data and learn self-care more easily.",
-        faqDesc: "Find answers to common questions about heart failure and app usage.",
-        faqBody: "For reliable medical FAQs, you can also read the Heart Failure Matters FAQ page.",
-        openFaq: "Open Heart Failure FAQ",
-        emergencyBody: "If you have a medical emergency, please contact your local emergency number immediately. Do not rely on this app for urgent treatment.",
-        supportTitle: "App Support",
-        supportBody: "For technical issues, please contact your lecturer, system administrator or healthcare team.",
+
+        contactUs: "Contact Us",
+        needHelp: "Choose the most suitable support option below.",
+
+        emergencyContact: "Emergency Contact",
+        emergencyBody: "If you have severe shortness of breath, chest pain, fainting or any urgent medical condition, please contact emergency services immediately. Do not rely on this app for urgent treatment.",
+
+        supportTitle: "Email Support",
+        supportBody: "For technical issues or general system support, contact the MyHFGuard support team by email.",
+
+        whatsappTitle: "WhatsApp Support",
+        whatsappBody: "For quick communication, you may also contact support through WhatsApp.",
+
+        callButton: "Call Emergency (999)",
+        emailButton: "Email Support",
+        whatsappButton: "Open WhatsApp",
+
+        disclaimer: "This app is for self-management support only and does not replace professional medical advice, diagnosis or treatment."
       },
 
       medication: {
@@ -545,17 +549,16 @@ const resources = {
   ms: {
     translation: {
       nav: {
+        menu: "Menu",
         dashboard: "Papan Pemuka",
-        selfCheck: "Semakan Kendiri",
-        exercise: "Senaman",
-        schedule: "Jadual",
-        medication: "Ubat",
-        vitalsTracker: "Penjejak Vital",
-        aiAssistant: "Pembantu AI",
-        education: "Pendidikan",
+        education: "Pembelajaran Saya",
+        selfCheck: "Semakan Kendiri Saya",
+        waterDiet: "Air & Diet Saya",
+        exercise: "Senaman Saya",
+        medication: "Ubat & Peringatan Saya",
+        aiAssistant: "Sembang Saya",
         helpSupport: "Bantuan & Sokongan",
         profile: "Profil",
-        menu: "Menu",
         quickAccess: "Akses pantas",
         logout: "Log Keluar"
       },
@@ -955,22 +958,28 @@ const resources = {
 
       helpSupport: {
         title: "Bantuan & Sokongan",
-        subtitle: "Cari bantuan dan sumber sokongan",
-        emergencyContact: "Hubungan Kecemasan",
-        faq: "Soalan Lazim",
-        contactUs: "Hubungi Kami",
-        chatbot: "Sokongan Chat",
-        hotline: "Talian Hotline",
-        caregiverSupport: "Sokongan Penjaga",
-        needHelp: "Perlukan bantuan? Kami sedia membantu anda.",
+        subtitle: "Dapatkan bantuan, panduan kecemasan dan sokongan penggunaan MyHFGuard.",
+
         aboutTitle: "Tentang MyHFGuard",
-        aboutBody: "MyHFGuard membantu pesakit kegagalan jantung memantau simptom, mengurus peringatan, merekod data kesihatan harian dan mempelajari penjagaan kendiri dengan lebih mudah.",
-        faqDesc: "Cari jawapan kepada soalan lazim tentang kegagalan jantung dan penggunaan aplikasi.",
-        faqBody: "Untuk soalan perubatan yang boleh dipercayai, anda juga boleh membaca halaman FAQ Heart Failure Matters.",
-        openFaq: "Buka FAQ Kegagalan Jantung",
-        emergencyBody: "Jika anda mengalami kecemasan perubatan, sila hubungi nombor kecemasan tempatan anda dengan segera. Jangan bergantung pada aplikasi ini untuk rawatan segera.",
-        supportTitle: "Sokongan Aplikasi",
-        supportBody: "Untuk isu teknikal, sila hubungi pensyarah, pentadbir sistem atau pasukan penjagaan kesihatan anda.",
+        aboutBody: "MyHFGuard membantu pesakit kegagalan jantung memantau simptom, mengurus peringatan, merekod data kesihatan harian dan mempelajari penjagaan diri dengan lebih mudah.",
+
+        contactUs: "Hubungi Kami",
+        needHelp: "Pilih kaedah bantuan yang sesuai di bawah.",
+
+        emergencyContact: "Hubungan Kecemasan",
+        emergencyBody: "Jika anda mengalami sesak nafas teruk, sakit dada, pengsan atau keadaan kecemasan lain, sila hubungi perkhidmatan kecemasan dengan segera. Jangan bergantung pada aplikasi ini untuk rawatan segera.",
+
+        supportTitle: "Sokongan Emel",
+        supportBody: "Untuk masalah teknikal atau sokongan sistem, sila hubungi pasukan sokongan MyHFGuard melalui emel.",
+
+        whatsappTitle: "Sokongan WhatsApp",
+        whatsappBody: "Untuk komunikasi pantas, anda juga boleh menghubungi sokongan melalui WhatsApp.",
+
+        callButton: "Hubungi Kecemasan (999)",
+        emailButton: "Emel Sokongan",
+        whatsappButton: "Buka WhatsApp",
+
+        disclaimer: "Aplikasi ini hanya untuk sokongan penjagaan diri dan tidak menggantikan nasihat, diagnosis atau rawatan perubatan profesional."
       },
 
       medication: {
